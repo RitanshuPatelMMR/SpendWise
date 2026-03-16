@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import dotenv from 'dotenv'
+import reportsRoutes from './routes/reports'
 
 dotenv.config()
 
@@ -19,7 +20,7 @@ import categoryRoutes from './routes/categories'
 app.use('/auth', authRoutes)
 app.use('/transactions', transactionRoutes)
 app.use('/categories', categoryRoutes)
-
+app.use('/reports', reportsRoutes)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
