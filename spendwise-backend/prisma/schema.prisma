@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  firebase_uid       String             @unique
+  email              String             @unique
+  name               String?
+  fcm_token          String?
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  transactions       Transaction[]
+  categories         Category[]
+  budgets            Budget[]
+  merchant_overrides MerchantOverride[]
+}
+
+model Transaction {
+  id               String    @id @default(uuid())
+  user_id          String
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  amount           Decimal
+  my_share         Decimal?
+  merchant         String
+  bank             String?
+  account_masked   String?
+  mode             String?
+  txn_type         String?
+  upi_ref          String?
+  sms_raw          String?
+  transaction_date DateTime
+  category_id      String?
+  category         Category? @relation(fields: [category_id], references: [id])
+  status           String    @default("PENDING")
+  note             String?
+  is_splittable    Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+}
+
+model Category {
+  id           String        @id @default(uuid())
+  user_id      String
+  user         User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  name         String
+  icon         String
+  color        String
+  is_default   Boolean       @default(false)
+  is_hidden    Boolean       @default(false)
+  sort_order   Int           @default(0)
+  keywords     String[]
+  created_at   DateTime      @default(now())
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+model Budget {
+  id          String   @id @default(uuid())
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category_id String
+  category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  amount      Decimal
+  month       Int
+  year        Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([user_id, category_id, month, year])
+}
+
+model MerchantOverride {
+  id          String   @id @default(uuid())
+  user_id     String
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  merchant    String
+  category_id String
+  created_at  DateTime @default(now())
+
+  @@unique([user_id, merchant])
+}
