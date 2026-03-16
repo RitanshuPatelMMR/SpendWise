@@ -4,3 +4,4 @@ node_modules
 
 /generated/prisma
 google-services.json
+firebase-service-account.json
