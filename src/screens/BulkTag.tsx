@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import {
   View, Text, StyleSheet, FlatList,
-  TouchableOpacity, ActivityIndicator
+  TouchableOpacity, ActivityIndicator, ScrollView
 } from 'react-native'
 import { Colors } from '../constants/colors'
 import { useCategoryStore } from '../store/categoryStore'
@@ -38,30 +38,37 @@ export default function BulkTag({ navigation }: any) {
     }
   }
 
-  const handleTag = async (txnId: string, categoryId: string) => {
-    try {
-      await api.put(`/transactions/${txnId}`, {
-        category_id: categoryId,
-        status: 'CONFIRMED',
-      })
-      setTransactions(prev => prev.filter(t => t.id !== txnId))
-    } catch (e) {
-      console.error('Failed to tag:', e)
+const handleTag = async (txnId: string, categoryId: string) => {
+  try {
+    await api.put(`/transactions/${txnId}`, {
+      category_id: categoryId,
+      status: 'CONFIRMED',
+    })
+    const remaining = transactions.filter(t => t.id !== txnId)
+    setTransactions(remaining)
+
+    // ← Auto navigate when last transaction is tagged
+    if (remaining.length === 0) {
+      navigation.goBack()
     }
+  } catch (e) {
+    console.error('Failed to tag:', e)
   }
+}
 
   const handleSkipAll = async () => {
-    try {
-      await Promise.all(
-        transactions.map(t =>
-          api.put(`/transactions/${t.id}`, { status: 'SKIPPED' })
-        )
+  try {
+    await Promise.all(
+      transactions.map(t =>
+        api.put(`/transactions/${t.id}`, { status: 'SKIPPED' })
       )
-      setTransactions([])
-    } catch (e) {
-      console.error('Failed to skip all:', e)
-    }
+    )
+    setTransactions([])
+    navigation.goBack()  // ← Add this
+  } catch (e) {
+    console.error('Failed to skip all:', e)
   }
+}
 
   if (loading) {
     return (
@@ -104,16 +111,18 @@ export default function BulkTag({ navigation }: any) {
             </Text>
 
             {/* Quick category buttons */}
-            <View style={styles.catRow}>
-              {categories.slice(0, 5).map(cat => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={styles.catChip}
-                  onPress={() => handleTag(item.id, cat.id)}>
-                  <Text style={styles.catChipText}>{cat.icon} {cat.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+  <View style={styles.catRow}>
+    {categories.map(cat => (
+      <TouchableOpacity
+        key={cat.id}
+        style={styles.catChip}
+        onPress={() => handleTag(item.id, cat.id)}>
+        <Text style={styles.catChipText}>{cat.icon} {cat.name}</Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+</ScrollView>
 
             <TouchableOpacity
               style={styles.skipBtn}
@@ -146,7 +155,7 @@ const styles = StyleSheet.create({
   merchant: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
   amount: { fontSize: 18, fontWeight: '700', color: Colors.primary },
   date: { fontSize: 12, color: Colors.textHint, marginBottom: 12 },
-  catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  catRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   catChip: { backgroundColor: Colors.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
   catChipText: { fontSize: 12, color: Colors.primary, fontWeight: '500' },
   skipBtn: { alignSelf: 'flex-start', marginTop: 4 },

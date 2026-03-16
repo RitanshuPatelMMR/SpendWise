@@ -6,6 +6,10 @@ import {
 import { Colors } from '../constants/colors'
 import { useUserStore } from '../store/userStore'
 import api from '../services/api'
+import TransactionDetailSheet from '../components/TransactionDetailSheet'
+import ManualAddSheet from '../components/ManualAddSheet'
+import { useFocusEffect } from '@react-navigation/native'
+
 
 type Summary = {
   total: number
@@ -37,6 +41,9 @@ export default function Dashboard({ navigation }: any) {
   const [pendingCount, setPendingCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+   const [selectedTxn, setSelectedTxn] = useState<any>(null)      // ← ADD HERE
+  const [detailVisible, setDetailVisible] = useState(false)       // ← ADD HERE
+  const [manualVisible, setManualVisible] = useState(false)
 
   const now = new Date()
   const month = now.getMonth() + 1
@@ -61,7 +68,11 @@ export default function Dashboard({ navigation }: any) {
     }
   }, [month, year])
 
-  useEffect(() => { loadData() }, [loadData])
+useFocusEffect(
+  useCallback(() => {
+    loadData()
+  }, [loadData])
+)
 
   const onRefresh = () => {
     setRefreshing(true)
@@ -112,9 +123,9 @@ export default function Dashboard({ navigation }: any) {
           <Text style={styles.greeting}>{greeting()}, {firstName} 👋</Text>
           <Text style={styles.month}>{monthName} {year}</Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => {}}>
-          <Text style={styles.addBtnText}>+ Add</Text>
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setManualVisible(true)}>
+  <Text style={styles.addBtnText}>+ Add</Text>
+</TouchableOpacity>
       </View>
 
       {/* Pending Banner */}
@@ -212,8 +223,13 @@ export default function Dashboard({ navigation }: any) {
             <View key={date}>
               <Text style={styles.dateLabel}>{date}</Text>
               {txns.map(t => (
-                <TouchableOpacity key={t.id} style={styles.txnRow}>
-                  <View style={[styles.txnIcon, { backgroundColor: t.category?.color + '20' || '#eee' }]}>
+<TouchableOpacity
+  key={t.id}
+  style={styles.txnRow}
+  onPress={() => {
+    setSelectedTxn(t)
+    setDetailVisible(true)
+  }}>                  <View style={[styles.txnIcon, { backgroundColor: t.category?.color + '20' || '#eee' }]}>
                     <Text style={styles.txnEmoji}>{t.category?.icon || '💰'}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
@@ -229,6 +245,17 @@ export default function Dashboard({ navigation }: any) {
           ))
         )}
       </View>
+      <TransactionDetailSheet
+        visible={detailVisible}
+        transaction={selectedTxn}
+        onClose={() => setDetailVisible(false)}
+        onUpdated={loadData}
+      />
+        <ManualAddSheet
+        visible={manualVisible}
+        onClose={() => setManualVisible(false)}
+        onAdded={loadData}
+      />
 
     </ScrollView>
   )

@@ -107,4 +107,14 @@ router.put('/:id', authenticate, async (req: AuthRequest, res) => {
   }
 })
 
+router.delete('/:id', authenticate, async (req: AuthRequest, res) => {
+  try {
+    const id = req.params.id as string
+    await prisma.transaction.delete({ where: { id } })
+    res.json({ success: true })
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 export default router
