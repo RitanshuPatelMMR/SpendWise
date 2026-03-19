@@ -116,7 +116,7 @@ const handleSaveBudget = async () => {
   } finally {
     setSaving(false)
   }
-}
+} 
 
   const handleDeleteBudget = async () => {
     if (!selectedCat?.budget) return
